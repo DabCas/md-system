@@ -45,7 +45,8 @@
       "Bash(git branch:*)",
       "Bash(git remote add:*)",
       "Bash(git push:*)",
-      "Bash(git credential-manager:*)"
+      "Bash(git credential-manager:*)",
+      "Bash(pnpm run build)"
     ],
     "deny": [],
     "ask": []

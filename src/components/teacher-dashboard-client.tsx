@@ -42,7 +42,7 @@ interface FormStudent extends Student {
   section: string
 }
 
-interface Record {
+interface MeritDemeritRecord {
   id: string
   type: 'merit' | 'demerit'
   reason: string
@@ -59,7 +59,7 @@ interface TeacherDashboardClientProps {
   demeritsToday: number
   remainingQuota: number
   quotaLimit: number
-  recentRecords: Record[]
+  recentRecords: MeritDemeritRecord[]
   students: FormStudent[]
 }
 
@@ -183,7 +183,7 @@ export function TeacherDashboardClient({
           <div className="space-y-4">
             <h2 className="text-base lg:text-lg font-semibold text-biscay px-1">Recent Activity</h2>
             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-              {Object.entries(recordsByWeek).map(([weekLabel, weekRecords]: [string, Record[]]) => (
+              {(Object.entries(recordsByWeek) as [string, MeritDemeritRecord[]][]).map(([weekLabel, weekRecords]) => (
                 <div key={weekLabel} className="space-y-2">
                   <div className="flex items-center gap-2 px-1">
                     <Calendar className="h-3.5 w-3.5 lg:h-4 lg:w-4 text-wild-blue" />
@@ -270,8 +270,8 @@ export function TeacherDashboardClient({
   )
 }
 
-function groupRecordsByWeek(records: Record[]): Record<string, Record[]> {
-  const grouped: Record<string, Record[]> = {}
+function groupRecordsByWeek(records: MeritDemeritRecord[]): Record<string, MeritDemeritRecord[]> {
+  const grouped: Record<string, MeritDemeritRecord[]> = {}
 
   records.forEach((record) => {
     const date = new Date(record.created_at)
