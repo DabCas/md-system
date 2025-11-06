@@ -1,0 +1,20 @@
+{
+  "mcpServers": {
+    "supabase": {
+      "type": "http",
+      "url": "https://mcp.supabase.com/mcp?project_ref=aieaepthbjaktazjdvcm",
+      "headers": {
+        "Authorization": "Bearer sbp_15bc4b7bbb593c45b5b150ea66511007c295fe0a"
+      }
+    },
+    "chrome-devtools": {
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "chrome-devtools-mcp@latest"
+      ],
+      "env": {}
+    }
+  }
+}

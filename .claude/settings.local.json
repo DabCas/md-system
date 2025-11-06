@@ -1,0 +1,52 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Stop-Process -Force)",
+      "Bash(taskkill:*)",
+      "Bash(nul)",
+      "Bash(powershell -Command \"Get-Process node -ErrorAction SilentlyContinue | Stop-Process -Force\")",
+      "Bash(cat:*)",
+      "Bash(curl:*)",
+      "mcp__chrome-devtools__list_pages",
+      "mcp__chrome-devtools__navigate_page",
+      "mcp__chrome-devtools__take_snapshot",
+      "mcp__chrome-devtools__list_console_messages",
+      "mcp__chrome-devtools__get_console_message",
+      "mcp__chrome-devtools__take_screenshot",
+      "mcp__chrome-devtools__click",
+      "mcp__chrome-devtools__wait_for",
+      "mcp__chrome-devtools__evaluate_script",
+      "mcp__chrome-devtools__fill",
+      "mcp__supabase__execute_sql",
+      "mcp__supabase__get_logs",
+      "mcp__supabase__apply_migration",
+      "Bash(pgrep:*)",
+      "Bash(tasklist:*)",
+      "Bash(findstr:*)",
+      "Bash(where:*)",
+      "Bash(timeout /t 2 /nobreak)",
+      "Bash(start chrome http://localhost:3000/dashboard/teacher)",
+      "Bash(powershell -Command \"Get-Process chrome -ErrorAction SilentlyContinue | Stop-Process -Force\")",
+      "Bash(start chrome:*)",
+      "Bash(timeout /t 3 /nobreak)",
+      "mcp__chrome-devtools__press_key",
+      "mcp__chrome-devtools__resize_page",
+      "Bash(dir:*)",
+      "Bash(python:*)",
+      "Bash(python3:*)",
+      "Bash(py parse_attendance.py)",
+      "Bash(py:*)",
+      "Bash(del:*)",
+      "Bash(powershell -Command:*)",
+      "Bash(.gitignore)",
+      "Bash(git add:*)",
+      "Bash(git config:*)"
+    ],
+    "deny": [],
+    "ask": []
+  },
+  "enabledMcpjsonServers": [
+    "supabase",
+    "chrome-devtools"
+  ]
+}
