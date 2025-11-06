@@ -82,7 +82,7 @@ export default async function StudentDashboardPage() {
     .order('earned_on', { ascending: false })
 
   // Get all records with teacher info
-  const { data: records } = await supabase
+  const { data: recordsRaw } = await supabase
     .from('records')
     .select(`
       id,
@@ -90,7 +90,7 @@ export default async function StudentDashboardPage() {
       reason,
       quantity,
       created_at,
-      teachers (
+      teachers!inner (
         name
       )
     `)
@@ -98,6 +98,12 @@ export default async function StudentDashboardPage() {
     .eq('is_deleted', false)
     .order('created_at', { ascending: false })
     .limit(100)
+
+  // Transform records to match expected type
+  const records = recordsRaw?.map((record: any) => ({
+    ...record,
+    teachers: Array.isArray(record.teachers) ? record.teachers[0] : record.teachers
+  }))
 
   return (
     <StudentDashboardClient

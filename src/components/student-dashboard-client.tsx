@@ -23,7 +23,7 @@ interface Record {
   reason: string
   quantity: number
   created_at: string
-  teachers: Teacher
+  teachers: Teacher | null
 }
 
 interface StudentDashboardClientProps {
@@ -168,7 +168,7 @@ export function StudentDashboardClient({
                         {record.reason}
                       </p>
                       <p className="text-xs text-gray-400">
-                        {formattedDate} • {record.teachers.name}
+                        {formattedDate} • {record.teachers?.name || 'Unknown'}
                       </p>
                     </div>
                     <span
