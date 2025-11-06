@@ -52,7 +52,7 @@ export function LinkAccountClient({ user, students }: LinkAccountClientProps) {
   const [grade, setGrade] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const needsGradeInput = selectedStudent && !selectedStudent.grade
+  const needsGradeInput = !!(selectedStudent && !selectedStudent.grade)
 
   // Auto-detect student based on Google account name
   useEffect(() => {
