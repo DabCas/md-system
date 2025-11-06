@@ -72,7 +72,7 @@ export default async function TeacherDashboardPage() {
   startOfMonth.setDate(1)
   startOfMonth.setHours(0, 0, 0, 0)
 
-  const { data: monthRecords } = await supabase
+  const { data: monthRecordsRaw } = await supabase
     .from('records')
     .select(`
       id,
@@ -80,7 +80,7 @@ export default async function TeacherDashboardPage() {
       reason,
       quantity,
       created_at,
-      students (
+      students!inner (
         id,
         full_name,
         english_name
@@ -91,6 +91,12 @@ export default async function TeacherDashboardPage() {
     .eq('is_deleted', false)
     .order('created_at', { ascending: false })
     .limit(50)
+
+  // Transform records to match expected type
+  const monthRecords = monthRecordsRaw?.map((record: any) => ({
+    ...record,
+    students: Array.isArray(record.students) ? record.students[0] : record.students
+  }))
 
   // Get all students for the form
   const { data: students } = await supabase

@@ -48,7 +48,7 @@ interface Record {
   reason: string
   quantity: number
   created_at: string
-  students: Student
+  students: Student | null
 }
 
 interface TeacherDashboardClientProps {
@@ -201,7 +201,7 @@ export function TeacherDashboardClient({
                           <XCircle className="h-3.5 w-3.5 text-camelot flex-shrink-0" />
                         )}
                         <span className="font-medium text-xs lg:text-sm text-biscay flex-shrink-0">
-                          {record.students.english_name}
+                          {record.students?.english_name || 'Unknown'}
                         </span>
                         <span className="text-xs lg:text-sm text-gray-500 truncate flex-1">
                           {record.reason}
