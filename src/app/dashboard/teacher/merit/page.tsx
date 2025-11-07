@@ -20,9 +20,20 @@ export default async function MeritPage() {
     .eq('user_id', user.id)
     .single()
 
-  if (!teacher) {
+  // Check if user is a principal
+  const { data: principal } = await supabase
+    .from('principals')
+    .select('*')
+    .eq('user_id', user.id)
+    .single()
+
+  if (!teacher && !principal) {
     redirect('/dashboard')
   }
+
+  const accountData = teacher || principal
+  const accountId = accountData?.id || ''
+  const accountName = accountData?.name || ''
 
   // Get all students
   const { data: students } = await supabase
@@ -31,23 +42,29 @@ export default async function MeritPage() {
     .order('grade')
     .order('english_name')
 
-  // Get current week's quota
-  const startOfWeek = getStartOfWeek(new Date())
-  const { data: weeklyQuota } = await supabase
-    .from('weekly_quotas')
-    .select('*')
-    .eq('teacher_id', teacher.id)
-    .eq('week_start', startOfWeek)
-    .single()
+  // Get current week's quota (only for teachers, principals have unlimited)
+  let meritsIssued = 0
+  let quotaLimit = 999
+  let remainingQuota = 999
 
-  const meritsIssued = weeklyQuota?.merits_issued || 0
-  const quotaLimit = weeklyQuota?.quota_limit || 5
-  const remainingQuota = quotaLimit - meritsIssued
+  if (teacher) {
+    const startOfWeek = getStartOfWeek(new Date())
+    const { data: weeklyQuota } = await supabase
+      .from('weekly_quotas')
+      .select('*')
+      .eq('teacher_id', teacher.id)
+      .eq('week_start', startOfWeek)
+      .single()
+
+    meritsIssued = weeklyQuota?.merits_issued || 0
+    quotaLimit = weeklyQuota?.quota_limit || 5
+    remainingQuota = quotaLimit - meritsIssued
+  }
 
   return (
     <MeritForm
-      teacherId={teacher.id}
-      teacherName={teacher.name}
+      teacherId={accountId}
+      teacherName={accountName}
       students={students || []}
       remainingQuota={remainingQuota}
       quotaLimit={quotaLimit}

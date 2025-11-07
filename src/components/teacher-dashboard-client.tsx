@@ -34,12 +34,10 @@ interface Student {
   full_name: string
   english_name: string
   grade?: string
-  section?: string
 }
 
 interface FormStudent extends Student {
   grade: string
-  section: string
 }
 
 interface MeritDemeritRecord {
@@ -410,7 +408,7 @@ function MeritFormContent({
                     {selectedStudent.english_name} ({selectedStudent.full_name})
                   </span>
                   <span className="text-xs text-gray-500">
-                    Grade {selectedStudent.grade} - Section {selectedStudent.section}
+                    Grade {selectedStudent.grade}
                   </span>
                 </div>
               ) : (
@@ -428,7 +426,7 @@ function MeritFormContent({
                   {students.map((student) => (
                     <CommandItem
                       key={student.id}
-                      value={`${student.english_name} ${student.full_name} ${student.grade} ${student.section}`}
+                      value={`${student.english_name} ${student.full_name} ${student.grade}`}
                       onSelect={() => {
                         setSelectedStudent(student)
                         setOpen(false)
@@ -447,7 +445,7 @@ function MeritFormContent({
                           {student.english_name} ({student.full_name})
                         </span>
                         <span className="text-xs text-gray-500">
-                          Grade {student.grade} - Section {student.section}
+                          Grade {student.grade}
                         </span>
                       </div>
                     </CommandItem>
@@ -597,7 +595,7 @@ function DemeritFormContent({
                     {selectedStudent.english_name} ({selectedStudent.full_name})
                   </span>
                   <span className="text-xs text-gray-500">
-                    Grade {selectedStudent.grade} - Section {selectedStudent.section}
+                    Grade {selectedStudent.grade}
                   </span>
                 </div>
               ) : (
@@ -615,7 +613,7 @@ function DemeritFormContent({
                   {students.map((student) => (
                     <CommandItem
                       key={student.id}
-                      value={`${student.english_name} ${student.full_name} ${student.grade} ${student.section}`}
+                      value={`${student.english_name} ${student.full_name} ${student.grade}`}
                       onSelect={() => {
                         setSelectedStudent(student)
                         setOpen(false)
@@ -634,7 +632,7 @@ function DemeritFormContent({
                           {student.english_name} ({student.full_name})
                         </span>
                         <span className="text-xs text-gray-500">
-                          Grade {student.grade} - Section {student.section}
+                          Grade {student.grade}
                         </span>
                       </div>
                     </CommandItem>

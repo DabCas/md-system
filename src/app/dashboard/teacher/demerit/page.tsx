@@ -20,9 +20,20 @@ export default async function DemeritPage() {
     .eq('user_id', user.id)
     .single()
 
-  if (!teacher) {
+  // Check if user is a principal
+  const { data: principal } = await supabase
+    .from('principals')
+    .select('*')
+    .eq('user_id', user.id)
+    .single()
+
+  if (!teacher && !principal) {
     redirect('/dashboard')
   }
+
+  const accountData = teacher || principal
+  const accountId = accountData?.id || ''
+  const accountName = accountData?.name || ''
 
   // Get all students
   const { data: students } = await supabase
@@ -33,8 +44,8 @@ export default async function DemeritPage() {
 
   return (
     <DemeritForm
-      teacherId={teacher.id}
-      teacherName={teacher.name}
+      teacherId={accountId}
+      teacherName={accountName}
       students={students || []}
     />
   )

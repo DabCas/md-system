@@ -20,10 +20,17 @@ export default async function TeacherDashboardPage() {
     .eq('user_id', user.id)
     .single()
 
+  // Check if user is a principal
+  const { data: principal } = await supabase
+    .from('principals')
+    .select('*')
+    .eq('user_id', user.id)
+    .single()
+
   // Get user's avatar from metadata
   const avatarUrl = user.user_metadata?.avatar_url || user.user_metadata?.picture
 
-  if (!teacher) {
+  if (!teacher && !principal) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
@@ -36,43 +43,61 @@ export default async function TeacherDashboardPage() {
     )
   }
 
-  // Get today's records count
+  // Use teacher or principal data (principals have full access like teachers)
+  const accountData = teacher || principal
+  const accountId = accountData?.id || ''
+  const accountName = accountData?.name || ''
+
+  // Get today's records count (principals see all, teachers see only theirs)
   const today = new Date().toISOString().split('T')[0]
-  const { count: meritsToday } = await supabase
+  let meritsQuery = supabase
     .from('records')
     .select('*', { count: 'exact', head: true })
-    .eq('teacher_id', teacher.id)
     .eq('type', 'merit')
     .gte('created_at', `${today}T00:00:00`)
     .eq('is_deleted', false)
 
-  const { count: demeritsToday } = await supabase
+  let demeritsQuery = supabase
     .from('records')
     .select('*', { count: 'exact', head: true })
-    .eq('teacher_id', teacher.id)
     .eq('type', 'demerit')
     .gte('created_at', `${today}T00:00:00`)
     .eq('is_deleted', false)
 
-  // Get current week's quota
-  const startOfWeek = getStartOfWeek(new Date())
-  const { data: weeklyQuota } = await supabase
-    .from('weekly_quotas')
-    .select('*')
-    .eq('teacher_id', teacher.id)
-    .eq('week_start', startOfWeek)
-    .single()
+  // If teacher (not principal), filter by teacher_id
+  if (teacher) {
+    meritsQuery = meritsQuery.eq('teacher_id', teacher.id)
+    demeritsQuery = demeritsQuery.eq('teacher_id', teacher.id)
+  }
 
-  const meritsIssued = weeklyQuota?.merits_issued || 0
-  const quotaLimit = weeklyQuota?.quota_limit || 5
-  const remainingQuota = quotaLimit - meritsIssued
+  const { count: meritsToday } = await meritsQuery
+  const { count: demeritsToday } = await demeritsQuery
+
+  // Get current week's quota (only for teachers, principals have unlimited)
+  let meritsIssued = 0
+  let quotaLimit = 999
+  let remainingQuota = 999
+
+  if (teacher) {
+    const startOfWeek = getStartOfWeek(new Date())
+    const { data: weeklyQuota } = await supabase
+      .from('weekly_quotas')
+      .select('*')
+      .eq('teacher_id', teacher.id)
+      .eq('week_start', startOfWeek)
+      .single()
+
+    meritsIssued = weeklyQuota?.merits_issued || 0
+    quotaLimit = weeklyQuota?.quota_limit || 5
+    remainingQuota = quotaLimit - meritsIssued
+  }
 
   // Get current month's records with student info
   const startOfMonth = new Date()
   startOfMonth.setDate(1)
   startOfMonth.setHours(0, 0, 0, 0)
 
-  const { data: monthRecordsRaw } = await supabase
+  let monthRecordsQuery = supabase
     .from('records')
     .select(`
       id,
@@ -86,11 +111,17 @@ export default async function TeacherDashboardPage() {
         english_name
       )
     `)
-    .eq('teacher_id', teacher.id)
     .gte('created_at', startOfMonth.toISOString())
     .eq('is_deleted', false)
     .order('created_at', { ascending: false })
     .limit(50)
+
+  // If teacher (not principal), filter by teacher_id
+  if (teacher) {
+    monthRecordsQuery = monthRecordsQuery.eq('teacher_id', teacher.id)
+  }
+
+  const { data: monthRecordsRaw } = await monthRecordsQuery
 
   // Transform records to match expected type
   const monthRecords = monthRecordsRaw?.map((record: any) => ({
@@ -101,15 +132,14 @@ export default async function TeacherDashboardPage() {
   // Get all students for the form
   const { data: students } = await supabase
     .from('students')
-    .select('id, full_name, english_name, grade, section')
+    .select('id, full_name, english_name, grade')
     .order('grade', { ascending: true })
-    .order('section', { ascending: true })
     .order('english_name', { ascending: true })
 
   return (
     <TeacherDashboardClient
-      teacherId={teacher.id}
-      teacherName={teacher.name}
+      teacherId={accountId}
+      teacherName={accountName}
       avatarUrl={avatarUrl}
       meritsToday={meritsToday || 0}
       demeritsToday={demeritsToday || 0}
