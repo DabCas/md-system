@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import {
@@ -47,6 +48,7 @@ export function DemeritForm({
   const [open, setOpen] = useState(false)
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null)
   const [reason, setReason] = useState('')
+  const [location, setLocation] = useState('')
   const [quantity, setQuantity] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -73,6 +75,7 @@ export function DemeritForm({
         academic_year_id: academicYear?.id,
         type: 'demerit',
         reason: reason.trim(),
+        location: location.trim() || null,
         quantity,
       })
 
@@ -186,6 +189,18 @@ export function DemeritForm({
                 onChange={(e) => setReason(e.target.value)}
                 rows={4}
                 className="resize-none text-base"
+              />
+            </div>
+
+            {/* Location */}
+            <div className="space-y-2">
+              <Label htmlFor="location">Location</Label>
+              <Input
+                id="location"
+                placeholder="e.g., Room 301, Cafeteria, Dorm A, Hallway..."
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                className="text-base"
               />
             </div>
 

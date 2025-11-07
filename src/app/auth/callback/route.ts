@@ -13,6 +13,22 @@ export async function GET(request: Request) {
     if (user) {
       const userEmail = user.email
 
+      // Email domain whitelist - only allow @stpaulclark.com and test accounts
+      if (userEmail) {
+        const allowedTestEmails = [
+          'imdennisalimpolos@gmail.com',
+          'mr.dennisalimpolos@gmail.com'
+        ]
+        const isTestAccount = allowedTestEmails.includes(userEmail.toLowerCase())
+        const isStPaulDomain = userEmail.toLowerCase().endsWith('@stpaulclark.com')
+
+        if (!isTestAccount && !isStPaulDomain) {
+          // Unauthorized domain - sign out and redirect to login with error
+          await supabase.auth.signOut()
+          return NextResponse.redirect(`${origin}/login?error=unauthorized_domain`)
+        }
+      }
+
       // Try to auto-match and link account by email
       if (userEmail) {
         // Check if user is a principal FIRST (highest priority)

@@ -12,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import {
@@ -44,6 +45,7 @@ interface MeritDemeritRecord {
   id: string
   type: 'merit' | 'demerit'
   reason: string
+  location?: string | null
   quantity: number
   created_at: string
   students: Student | null
@@ -191,28 +193,35 @@ export function TeacherDashboardClient({
                     {weekRecords.map((record) => (
                       <div
                         key={record.id}
-                        className="bg-white rounded-md px-2.5 py-2 shadow-sm flex items-center gap-2"
+                        className="bg-white rounded-md px-2.5 py-2 shadow-sm"
                       >
-                        {record.type === 'merit' ? (
-                          <Award className="h-3.5 w-3.5 text-wild-blue flex-shrink-0" />
-                        ) : (
-                          <XCircle className="h-3.5 w-3.5 text-camelot flex-shrink-0" />
+                        <div className="flex items-center gap-2">
+                          {record.type === 'merit' ? (
+                            <Award className="h-3.5 w-3.5 text-wild-blue flex-shrink-0" />
+                          ) : (
+                            <XCircle className="h-3.5 w-3.5 text-camelot flex-shrink-0" />
+                          )}
+                          <span className="font-medium text-xs lg:text-sm text-biscay flex-shrink-0">
+                            {record.students?.english_name || 'Unknown'}
+                          </span>
+                          <span className="text-xs lg:text-sm text-gray-500 truncate flex-1">
+                            {record.reason}
+                          </span>
+                          <span
+                            className={`flex-shrink-0 text-sm lg:text-base font-bold ${
+                              record.type === 'merit'
+                                ? 'text-wild-blue'
+                                : 'text-camelot'
+                            }`}
+                          >
+                            {record.type === 'merit' ? '+' : '-'}{record.quantity}
+                          </span>
+                        </div>
+                        {record.location && (
+                          <div className="text-xs text-gray-400 mt-0.5 ml-5">
+                            📍 {record.location}
+                          </div>
                         )}
-                        <span className="font-medium text-xs lg:text-sm text-biscay flex-shrink-0">
-                          {record.students?.english_name || 'Unknown'}
-                        </span>
-                        <span className="text-xs lg:text-sm text-gray-500 truncate flex-1">
-                          {record.reason}
-                        </span>
-                        <span
-                          className={`flex-shrink-0 text-sm lg:text-base font-bold ${
-                            record.type === 'merit'
-                              ? 'text-wild-blue'
-                              : 'text-camelot'
-                          }`}
-                        >
-                          {record.type === 'merit' ? '+' : '-'}{record.quantity}
-                        </span>
                       </div>
                     ))}
                   </div>
@@ -345,6 +354,7 @@ function MeritFormContent({
   const [open, setOpen] = useState(false)
   const [selectedStudent, setSelectedStudent] = useState<FormStudent | null>(null)
   const [reason, setReason] = useState('')
+  const [location, setLocation] = useState('')
   const [quantity, setQuantity] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -374,6 +384,7 @@ function MeritFormContent({
         academic_year_id: academicYear?.id,
         type: 'merit',
         reason: reason.trim(),
+        location: location.trim() || null,
         quantity,
       })
 
@@ -470,6 +481,17 @@ function MeritFormContent({
       </div>
 
       <div className="space-y-2">
+        <Label htmlFor="location">Location</Label>
+        <Input
+          id="location"
+          placeholder="e.g., Room 301, Cafeteria..."
+          value={location}
+          onChange={(e) => setLocation(e.target.value)}
+          className="text-sm"
+        />
+      </div>
+
+      <div className="space-y-2">
         <Label>Quantity (1-5) *</Label>
         <div className="flex items-center justify-center gap-3">
           <Button
@@ -537,6 +559,7 @@ function DemeritFormContent({
   const [open, setOpen] = useState(false)
   const [selectedStudent, setSelectedStudent] = useState<FormStudent | null>(null)
   const [reason, setReason] = useState('')
+  const [location, setLocation] = useState('')
   const [quantity, setQuantity] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -561,6 +584,7 @@ function DemeritFormContent({
         academic_year_id: academicYear?.id,
         type: 'demerit',
         reason: reason.trim(),
+        location: location.trim() || null,
         quantity,
       })
 
@@ -653,6 +677,17 @@ function DemeritFormContent({
           onChange={(e) => setReason(e.target.value)}
           rows={3}
           className="resize-none text-sm"
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="location">Location</Label>
+        <Input
+          id="location"
+          placeholder="e.g., Room 301, Cafeteria..."
+          value={location}
+          onChange={(e) => setLocation(e.target.value)}
+          className="text-sm"
         />
       </div>
 

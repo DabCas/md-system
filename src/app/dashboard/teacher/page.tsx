@@ -103,6 +103,7 @@ export default async function TeacherDashboardPage() {
       id,
       type,
       reason,
+      location,
       quantity,
       created_at,
       students!inner (

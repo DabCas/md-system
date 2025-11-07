@@ -1,17 +1,25 @@
 'use client'
 
 import { createClient } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
-import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { useState, useEffect, Suspense } from 'react'
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [loading, setLoading] = useState(false)
   const [checking, setChecking] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const supabase = createClient()
 
   // Check if user is already logged in
   useEffect(() => {
+    // Check for error parameter
+    const errorParam = searchParams.get('error')
+    if (errorParam === 'unauthorized_domain') {
+      setError('Only @stpaulclark.com email addresses are allowed to access this system.')
+    }
+
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession()
       if (session) {
@@ -34,7 +42,7 @@ export default function LoginPage() {
     return () => {
       subscription.unsubscribe()
     }
-  }, [router, supabase.auth])
+  }, [router, supabase.auth, searchParams])
 
   const handleGoogleLogin = async () => {
     try {
@@ -83,6 +91,13 @@ export default function LoginPage() {
           </p>
         </div>
 
+        {error && (
+          <div className="rounded-lg bg-red-50 p-4 text-sm text-red-800 dark:bg-red-900/30 dark:text-red-200">
+            <p className="font-medium">Access Denied</p>
+            <p className="mt-1">{error}</p>
+          </div>
+        )}
+
         <div className="mt-8">
           <button
             onClick={handleGoogleLogin}
@@ -116,5 +131,19 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
+        <div className="text-center">
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    }>
+      <LoginContent />
+    </Suspense>
   )
 }
