@@ -27,9 +27,8 @@ export default async function MeritPage() {
   // Get all students
   const { data: students } = await supabase
     .from('students')
-    .select('id, full_name, english_name, grade, section')
+    .select('id, full_name, english_name, grade')
     .order('grade')
-    .order('section')
     .order('english_name')
 
   // Get current week's quota

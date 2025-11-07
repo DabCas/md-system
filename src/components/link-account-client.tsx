@@ -18,13 +18,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { Check, ChevronsUpDown } from 'lucide-react'
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
@@ -34,8 +27,7 @@ interface Student {
   id: string
   full_name: string
   english_name: string
-  grade: string | null
-  section: string | null
+  grade: string
 }
 
 interface LinkAccountClientProps {
@@ -49,10 +41,7 @@ export function LinkAccountClient({ user, students }: LinkAccountClientProps) {
 
   const [open, setOpen] = useState(false)
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null)
-  const [grade, setGrade] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
-
-  const needsGradeInput = !!(selectedStudent && !selectedStudent.grade)
 
   // Auto-detect student based on Google account name
   useEffect(() => {
@@ -110,27 +99,12 @@ export function LinkAccountClient({ user, students }: LinkAccountClientProps) {
       return
     }
 
-    if (needsGradeInput && !grade) {
-      alert('Please select your grade')
-      return
-    }
-
     setIsSubmitting(true)
 
     try {
-      const updateData: any = {
-        user_id: user.id,
-      }
-
-      // If student doesn't have grade, update it
-      if (needsGradeInput) {
-        updateData.grade = grade
-        updateData.section = 'A' // Default section since school doesn't use sections
-      }
-
       const { error } = await supabase
         .from('students')
-        .update(updateData)
+        .update({ user_id: user.id })
         .eq('id', selectedStudent.id)
 
       if (error) {
@@ -249,32 +223,11 @@ export function LinkAccountClient({ user, students }: LinkAccountClientProps) {
               </Popover>
             </div>
 
-            {/* Grade (only if student doesn't have grade) */}
-            {needsGradeInput && (
-              <div className="space-y-2">
-                <Label htmlFor="grade">Grade Level *</Label>
-                <Select value={grade} onValueChange={setGrade}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select grade..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="6">Grade 6</SelectItem>
-                    <SelectItem value="7">Grade 7</SelectItem>
-                    <SelectItem value="8">Grade 8</SelectItem>
-                    <SelectItem value="9">Grade 9</SelectItem>
-                    <SelectItem value="10">Grade 10</SelectItem>
-                    <SelectItem value="11">Grade 11</SelectItem>
-                    <SelectItem value="12">Grade 12</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
             {/* Submit Button */}
             <Button
               className="w-full h-12 bg-biscay hover:bg-biscay-light text-white"
               onClick={handleSubmit}
-              disabled={isSubmitting || !selectedStudent || (needsGradeInput && !grade)}
+              disabled={isSubmitting || !selectedStudent}
             >
               {isSubmitting ? 'Linking Account...' : 'Continue to Dashboard'}
             </Button>

@@ -12,6 +12,17 @@ export default async function DashboardPage() {
     redirect('/login')
   }
 
+  // Check if user is a principal (use teacher dashboard for now)
+  const { data: principal } = await supabase
+    .from('principals')
+    .select('id')
+    .eq('user_id', user.id)
+    .single()
+
+  if (principal) {
+    redirect('/dashboard/teacher')
+  }
+
   // Check if user is a teacher
   const { data: teacher } = await supabase
     .from('teachers')
@@ -34,6 +45,6 @@ export default async function DashboardPage() {
     redirect('/dashboard/student')
   }
 
-  // User is neither teacher nor linked student - needs to link account
+  // User is neither principal, teacher, nor linked student - needs to link account
   redirect('/link-account')
 }
