@@ -17,27 +17,32 @@ export default async function LinkAccountPage() {
 
   // Auto-link teacher/principal/student by email if not linked yet
   if (userEmail) {
-    // Check if email matches a principal
+    // Check if email matches a principal FIRST (highest priority)
     const { data: principalByEmail } = await supabase
       .from('principals')
       .select('id, user_id')
       .eq('email', userEmail)
-      .single()
+      .maybeSingle()
 
-    if (principalByEmail && !principalByEmail.user_id) {
-      // Create user in public.users
-      await supabase.from('users').insert({
+    if (principalByEmail) {
+      // Ensure user exists in public.users (upsert to handle duplicates)
+      await supabase.from('users').upsert({
         id: user.id,
         email: userEmail,
         role: 'principal',
         full_name: user.user_metadata?.name || user.user_metadata?.full_name || ''
+      }, {
+        onConflict: 'id',
+        ignoreDuplicates: false
       })
 
-      // Link principal account
-      await supabase
-        .from('principals')
-        .update({ user_id: user.id })
-        .eq('id', principalByEmail.id)
+      // Link principal account if not linked
+      if (!principalByEmail.user_id) {
+        await supabase
+          .from('principals')
+          .update({ user_id: user.id })
+          .eq('id', principalByEmail.id)
+      }
 
       redirect('/dashboard/teacher')
     }
@@ -47,22 +52,27 @@ export default async function LinkAccountPage() {
       .from('teachers')
       .select('id, user_id')
       .eq('email', userEmail)
-      .single()
+      .maybeSingle()
 
-    if (teacherByEmail && !teacherByEmail.user_id) {
-      // Create user in public.users
-      await supabase.from('users').insert({
+    if (teacherByEmail) {
+      // Ensure user exists in public.users (upsert to handle duplicates)
+      await supabase.from('users').upsert({
         id: user.id,
         email: userEmail,
         role: 'teacher',
         full_name: user.user_metadata?.name || user.user_metadata?.full_name || ''
+      }, {
+        onConflict: 'id',
+        ignoreDuplicates: false
       })
 
-      // Link teacher account
-      await supabase
-        .from('teachers')
-        .update({ user_id: user.id })
-        .eq('id', teacherByEmail.id)
+      // Link teacher account if not linked
+      if (!teacherByEmail.user_id) {
+        await supabase
+          .from('teachers')
+          .update({ user_id: user.id })
+          .eq('id', teacherByEmail.id)
+      }
 
       redirect('/dashboard/teacher')
     }
@@ -72,7 +82,7 @@ export default async function LinkAccountPage() {
       .from('students')
       .select('id, user_id')
       .eq('email', userEmail)
-      .single()
+      .maybeSingle()
 
     if (studentByEmail && !studentByEmail.user_id) {
       // Auto-link student account
