@@ -27,10 +27,71 @@ export async function GET(request: Request) {
           await supabase.auth.signOut()
           return NextResponse.redirect(`${origin}/login?error=unauthorized_domain`)
         }
-      }
 
-      // Note: Auto-linking is now handled by database trigger (handle_new_user)
-      // No need for manual linking code here
+        // Auto-link account and set role in user_metadata
+        let userRole: string | null = null
+
+        // Check if user is a principal (highest priority)
+        const { data: principal } = await supabase
+          .from('principals')
+          .select('id, user_id')
+          .eq('email', userEmail)
+          .maybeSingle()
+
+        if (principal) {
+          userRole = 'principal'
+          // Link principal account if not already linked
+          if (!principal.user_id) {
+            await supabase
+              .from('principals')
+              .update({ user_id: user.id })
+              .eq('id', principal.id)
+          }
+        } else {
+          // Check if user is a teacher
+          const { data: teacher } = await supabase
+            .from('teachers')
+            .select('id, user_id')
+            .eq('email', userEmail)
+            .maybeSingle()
+
+          if (teacher) {
+            userRole = 'teacher'
+            // Link teacher account if not already linked
+            if (!teacher.user_id) {
+              await supabase
+                .from('teachers')
+                .update({ user_id: user.id })
+                .eq('id', teacher.id)
+            }
+          } else {
+            // Check if user is a student
+            const { data: student } = await supabase
+              .from('students')
+              .select('id, user_id')
+              .eq('email', userEmail)
+              .maybeSingle()
+
+            if (student) {
+              userRole = 'student'
+              // Link student account if not already linked
+              if (!student.user_id) {
+                await supabase
+                  .from('students')
+                  .update({ user_id: user.id })
+                  .eq('id', student.id)
+              }
+            }
+          }
+        }
+
+        // Update user metadata with role (if found)
+        if (userRole) {
+          await supabase.auth.updateUser({
+            data: { role: userRole }
+          })
+        }
+      }
     }
   }
 
