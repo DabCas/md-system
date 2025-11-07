@@ -13,34 +13,87 @@ export default async function TeacherDashboardPage() {
     redirect('/login')
   }
 
-  // Get teacher data
-  const { data: teacher } = await supabase
+  const userEmail = user.email
+
+  // Get teacher data by user_id first
+  let { data: teacher } = await supabase
     .from('teachers')
     .select('*')
     .eq('user_id', user.id)
-    .single()
+    .maybeSingle()
 
-  // Check if user is a principal
-  const { data: principal } = await supabase
+  // Check if user is a principal by user_id
+  let { data: principal } = await supabase
     .from('principals')
     .select('*')
     .eq('user_id', user.id)
-    .single()
+    .maybeSingle()
+
+  // If not found by user_id, try to find and auto-link by email
+  if (!teacher && !principal && userEmail) {
+    // Try to find principal by email first (highest priority)
+    const { data: principalByEmail } = await supabase
+      .from('principals')
+      .select('*')
+      .eq('email', userEmail)
+      .maybeSingle()
+
+    if (principalByEmail && !principalByEmail.user_id) {
+      // Auto-link principal
+      await supabase.from('users').upsert({
+        id: user.id,
+        email: userEmail,
+        role: 'principal',
+        full_name: user.user_metadata?.name || user.user_metadata?.full_name || ''
+      }, {
+        onConflict: 'id',
+        ignoreDuplicates: false
+      })
+
+      await supabase
+        .from('principals')
+        .update({ user_id: user.id })
+        .eq('id', principalByEmail.id)
+
+      principal = { ...principalByEmail, user_id: user.id }
+    }
+
+    // Try to find teacher by email
+    if (!principal) {
+      const { data: teacherByEmail } = await supabase
+        .from('teachers')
+        .select('*')
+        .eq('email', userEmail)
+        .maybeSingle()
+
+      if (teacherByEmail && !teacherByEmail.user_id) {
+        // Auto-link teacher
+        await supabase.from('users').upsert({
+          id: user.id,
+          email: userEmail,
+          role: 'teacher',
+          full_name: user.user_metadata?.name || user.user_metadata?.full_name || ''
+        }, {
+          onConflict: 'id',
+          ignoreDuplicates: false
+        })
+
+        await supabase
+          .from('teachers')
+          .update({ user_id: user.id })
+          .eq('id', teacherByEmail.id)
+
+        teacher = { ...teacherByEmail, user_id: user.id }
+      }
+    }
+  }
 
   // Get user's avatar from metadata
   const avatarUrl = user.user_metadata?.avatar_url || user.user_metadata?.picture
 
+  // If still not found, redirect to link-account page (for students)
   if (!teacher && !principal) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold">Teacher Account Not Found</h1>
-          <p className="mt-2 text-gray-600">
-            Please contact an administrator to set up your account.
-          </p>
-        </div>
-      </div>
-    )
+    redirect('/link-account')
   }
 
   // Use teacher or principal data (principals have full access like teachers)
