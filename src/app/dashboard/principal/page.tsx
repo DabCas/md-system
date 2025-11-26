@@ -52,10 +52,15 @@ export default async function PrincipalDashboardPage() {
   const weekStart = new Date(getSchoolWeekStart(now))
   const weekEnd = getSchoolWeekEnd(now)
 
-  // Get current month boundaries
-  const monthStart = new Date()
-  monthStart.setDate(1)
-  monthStart.setHours(0, 0, 0, 0)
+  // Get the monthly reset date from settings
+  const { data: resetSetting } = await supabase
+    .from('system_settings')
+    .select('value')
+    .eq('key', 'monthly_reset_date')
+    .single()
+
+  const monthlyResetDate = resetSetting?.value ? new Date(resetSetting.value) : new Date()
+  monthlyResetDate.setHours(0, 0, 0, 0)
 
   // Run all queries in parallel for performance
   const [
@@ -93,23 +98,23 @@ export default async function PrincipalDashboardPage() {
       .lte('created_at', weekEnd.toISOString())
       .eq('is_deleted', false),
 
-    // This month's merits
+    // Merits since last reset
     supabase
       .from('records')
       .select('quantity')
       .eq('type', 'merit')
-      .gte('created_at', monthStart.toISOString())
+      .gte('created_at', monthlyResetDate.toISOString())
       .eq('is_deleted', false),
 
-    // This month's demerits
+    // Demerits since last reset
     supabase
       .from('records')
       .select('quantity')
       .eq('type', 'demerit')
-      .gte('created_at', monthStart.toISOString())
+      .gte('created_at', monthlyResetDate.toISOString())
       .eq('is_deleted', false),
 
-    // Top students by merit (this month)
+    // Top students by merit (since last reset)
     supabase
       .from('records')
       .select(`
@@ -122,7 +127,7 @@ export default async function PrincipalDashboardPage() {
         )
       `)
       .eq('type', 'merit')
-      .gte('created_at', monthStart.toISOString())
+      .gte('created_at', monthlyResetDate.toISOString())
       .eq('is_deleted', false),
 
     // Students with demerits (needing attention)
@@ -138,7 +143,7 @@ export default async function PrincipalDashboardPage() {
         )
       `)
       .eq('type', 'demerit')
-      .gte('created_at', monthStart.toISOString())
+      .gte('created_at', monthlyResetDate.toISOString())
       .eq('is_deleted', false),
 
     // Recent records with student and teacher info
@@ -357,6 +362,7 @@ export default async function PrincipalDashboardPage() {
       recentRecords={recentRecords}
       detentions={detentions}
       uniformPasses={uniformPasses}
+      monthlyResetDate={monthlyResetDate.toISOString()}
     />
   )
 }

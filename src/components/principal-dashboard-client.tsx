@@ -14,6 +14,8 @@ import {
   Check,
   Ban,
   ShieldCheck,
+  RotateCcw,
+  Loader2,
 } from 'lucide-react'
 import { DashboardHeader } from '@/components/dashboard-header'
 import { createClient } from '@/lib/supabase/client'
@@ -74,6 +76,7 @@ interface PrincipalDashboardClientProps {
   recentRecords: RecentRecord[]
   detentions: Detention[]
   uniformPasses: UniformPass[]
+  monthlyResetDate: string
 }
 
 export function PrincipalDashboardClient({
@@ -85,9 +88,11 @@ export function PrincipalDashboardClient({
   recentRecords,
   detentions: initialDetentions,
   uniformPasses,
+  monthlyResetDate,
 }: PrincipalDashboardClientProps) {
   const [detentions, setDetentions] = useState<Detention[]>(initialDetentions)
   const [updatingId, setUpdatingId] = useState<string | null>(null)
+  const [isResetting, setIsResetting] = useState(false)
 
   const formatTime = (dateString: string) => {
     const date = new Date(dateString)
@@ -126,6 +131,43 @@ export function PrincipalDashboardClient({
     } finally {
       setUpdatingId(null)
     }
+  }
+
+  const handleResetCounts = async () => {
+    if (!confirm('Are you sure you want to reset all merit and demerit counts? This will start a new counting period from now. Records are not deleted.')) {
+      return
+    }
+
+    setIsResetting(true)
+    try {
+      const supabase = createClient()
+      const { error } = await supabase
+        .from('system_settings')
+        .update({ value: new Date().toISOString(), updated_at: new Date().toISOString() })
+        .eq('key', 'monthly_reset_date')
+
+      if (error) {
+        console.error('Failed to reset:', error)
+        alert('Failed to reset counts')
+        return
+      }
+
+      // Refresh the page to show updated counts
+      window.location.reload()
+    } finally {
+      setIsResetting(false)
+    }
+  }
+
+  const formatResetDate = (dateString: string) => {
+    const date = new Date(dateString)
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit'
+    })
   }
 
   const pendingDetentions = detentions.filter(d => d.status === 'pending')
@@ -170,11 +212,28 @@ export function PrincipalDashboardClient({
           />
         </div>
 
-        {/* Monthly Summary */}
+        {/* Period Summary */}
         <div className="bg-white rounded-xl p-4 md:p-5 shadow-sm">
-          <div className="flex items-center gap-2 mb-4">
-            <Calendar className="h-5 w-5 text-biscay" />
-            <h2 className="font-semibold text-biscay">This Month</h2>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-biscay" />
+              <div>
+                <h2 className="font-semibold text-biscay">Current Period</h2>
+                <p className="text-xs text-gray-500">Since {formatResetDate(monthlyResetDate)}</p>
+              </div>
+            </div>
+            <button
+              onClick={handleResetCounts}
+              disabled={isResetting}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-camelot bg-camelot/10 hover:bg-camelot/20 rounded-lg transition-colors disabled:opacity-50"
+            >
+              {isResetting ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <RotateCcw className="h-3.5 w-3.5" />
+              )}
+              Reset Counts
+            </button>
           </div>
           <div className="grid grid-cols-3 gap-4 text-center">
             <div>
