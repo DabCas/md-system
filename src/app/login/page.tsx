@@ -211,9 +211,15 @@ function LoginContent() {
         </div>
 
         {/* Bottom Footer */}
-        <p className="mt-8 text-center text-xs text-white/30">
-          St. Paul American School Clark &copy; {new Date().getFullYear()}
-        </p>
+        <div className="mt-8 text-center space-y-2">
+          <div className="flex justify-center gap-4 text-xs">
+            <a href="/privacy" className="text-white/50 hover:text-white/80 underline">Privacy Policy</a>
+            <a href="/terms" className="text-white/50 hover:text-white/80 underline">Terms of Service</a>
+          </div>
+          <p className="text-xs text-white/30">
+            St. Paul American School Clark &copy; {new Date().getFullYear()}
+          </p>
+        </div>
       </div>
     </div>
   )
