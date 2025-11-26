@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { PrincipalDashboardClient } from '@/components/principal-dashboard-client'
-import { getSchoolWeekStart, getSchoolWeekEnd, getSchoolMonthStart } from '@/lib/utils'
+import { getSchoolWeekStart, getSchoolWeekEnd } from '@/lib/utils'
 
 export default async function PrincipalDashboardPage() {
   const supabase = await createClient()
@@ -52,8 +52,10 @@ export default async function PrincipalDashboardPage() {
   const weekStart = new Date(getSchoolWeekStart(now))
   const weekEnd = getSchoolWeekEnd(now)
 
-  // Get current school month start (first Friday of month)
-  const monthStart = getSchoolMonthStart(new Date())
+  // Get current month boundaries
+  const monthStart = new Date()
+  monthStart.setDate(1)
+  monthStart.setHours(0, 0, 0, 0)
 
   // Run all queries in parallel for performance
   const [
