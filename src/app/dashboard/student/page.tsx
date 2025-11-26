@@ -24,49 +24,53 @@ export default async function StudentDashboardPage() {
     redirect('/link-account')
   }
 
-  // Get total merits
-  const { count: totalMerits } = await supabase
-    .from('records')
-    .select('quantity', { count: 'exact', head: false })
-    .eq('student_id', student.id)
-    .eq('type', 'merit')
-    .eq('is_deleted', false)
+  // Get the monthly reset date from settings
+  const { data: resetSetting } = await supabase
+    .from('system_settings')
+    .select('value')
+    .eq('key', 'monthly_reset_date')
+    .single()
 
-  // Calculate sum of merit quantities
+  const monthlyResetDate = resetSetting?.value ? new Date(resetSetting.value) : new Date()
+  monthlyResetDate.setHours(0, 0, 0, 0)
+
+  // Calculate sum of merit quantities (since last reset)
   const { data: meritRecords } = await supabase
     .from('records')
     .select('quantity')
     .eq('student_id', student.id)
     .eq('type', 'merit')
     .eq('is_deleted', false)
+    .gte('created_at', monthlyResetDate.toISOString())
 
   const meritsTotal = meritRecords?.reduce((sum, record) => sum + record.quantity, 0) || 0
 
-  // Get total demerits
+  // Get total demerits (since last reset)
   const { data: demeritRecords } = await supabase
     .from('records')
     .select('quantity')
     .eq('student_id', student.id)
     .eq('type', 'demerit')
     .eq('is_deleted', false)
+    .gte('created_at', monthlyResetDate.toISOString())
 
   const demeritsTotal = demeritRecords?.reduce((sum, record) => sum + record.quantity, 0) || 0
 
-  // Get current month's raffle entries
-  const currentMonth = new Date().toISOString().slice(0, 7) // YYYY-MM format
-  const { data: raffleEntry } = await supabase
+  // Get raffle entries (since last reset)
+  const { data: raffleEntries } = await supabase
     .from('raffle_entries')
-    .select('total_entries, remaining_entries')
+    .select('total_entries')
     .eq('student_id', student.id)
-    .eq('month', currentMonth)
-    .single()
+    .gte('created_at', monthlyResetDate.toISOString())
 
-  // Get current month's uniform passes
-  const { data: uniformPassesThisMonth } = await supabase
+  const totalRaffleEntries = raffleEntries?.reduce((sum, entry) => sum + (entry.total_entries || 0), 0) || 0
+
+  // Get uniform passes (since last reset)
+  const { data: uniformPassesThisPeriod } = await supabase
     .from('uniform_passes')
     .select('*')
     .eq('student_id', student.id)
-    .eq('month', currentMonth)
+    .gte('created_at', monthlyResetDate.toISOString())
     .order('created_at', { ascending: false })
 
   // Get all uniform passes (for history)
@@ -114,12 +118,13 @@ export default async function StudentDashboardPage() {
   const nextPassAt = (Math.floor(meritsTotal / 5) + 1) * 5
   const progressToNextPass = meritsTotal % 5
 
-  // Check for pending detentions
+  // Check for pending detentions (since last reset)
   const { data: pendingDetention } = await supabase
     .from('detentions')
     .select('id, demerits_count, month, status')
     .eq('student_id', student.id)
     .eq('status', 'pending')
+    .gte('created_at', monthlyResetDate.toISOString())
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle()
@@ -130,8 +135,8 @@ export default async function StudentDashboardPage() {
       avatarUrl={user.user_metadata?.avatar_url || user.user_metadata?.picture}
       meritsTotal={meritsTotal}
       demeritsTotal={demeritsTotal}
-      raffleEntries={raffleEntry?.total_entries || 0}
-      uniformPassesThisMonth={uniformPassesThisMonth?.length || 0}
+      raffleEntries={totalRaffleEntries}
+      uniformPassesThisMonth={uniformPassesThisPeriod?.length || 0}
       uniformPassHistory={allUniformPasses || []}
       nextPassAt={nextPassAt}
       progressToNextPass={progressToNextPass}

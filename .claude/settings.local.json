@@ -58,7 +58,8 @@
       "Bash(pnpm type-check:*)",
       "Bash(pnpm build:*)",
       "WebFetch(domain:www.stpaulclark.com)",
-      "WebFetch(domain:stpaulclark.weebly.com)"
+      "WebFetch(domain:stpaulclark.weebly.com)",
+      "Bash(git revert:*)"
     ],
     "deny": [],
     "ask": []
