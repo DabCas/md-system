@@ -9,6 +9,9 @@ const inter = Inter({ subsets: ['latin'] })
 export const metadata: Metadata = {
   title: 'Merit & Demerit System',
   description: 'School merit and demerit tracking system',
+  verification: {
+    google: 'N3ywEn3HYmSbg0UaliEeCCIoUz1MnwZz2DzbPoLICqw',
+  },
 }
 
 export default function RootLayout({
