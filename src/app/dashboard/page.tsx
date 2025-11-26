@@ -12,39 +12,20 @@ export default async function DashboardPage() {
     redirect('/login')
   }
 
-  // Check if user is a principal (use teacher dashboard for now)
-  const { data: principal } = await supabase
-    .from('principals')
-    .select('id')
-    .eq('user_id', user.id)
-    .single()
+  // Get role from user metadata (set by auth callback)
+  const userRole = user.user_metadata?.role
 
-  if (principal) {
+  // Route to appropriate dashboard based on role
+  if (userRole === 'admin') {
+    redirect('/dashboard/admin')
+  } else if (userRole === 'principal') {
+    redirect('/dashboard/principal')
+  } else if (userRole === 'teacher') {
     redirect('/dashboard/teacher')
-  }
-
-  // Check if user is a teacher
-  const { data: teacher } = await supabase
-    .from('teachers')
-    .select('id')
-    .eq('user_id', user.id)
-    .single()
-
-  if (teacher) {
-    redirect('/dashboard/teacher')
-  }
-
-  // Check if user is a linked student
-  const { data: student } = await supabase
-    .from('students')
-    .select('id')
-    .eq('user_id', user.id)
-    .single()
-
-  if (student) {
+  } else if (userRole === 'student') {
     redirect('/dashboard/student')
   }
 
-  // User is neither principal, teacher, nor linked student - needs to link account
-  redirect('/link-account')
+  // No role found - should not happen with new flow
+  redirect('/login?error=no_role')
 }

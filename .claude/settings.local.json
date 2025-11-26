@@ -46,7 +46,19 @@
       "Bash(git remote add:*)",
       "Bash(git push:*)",
       "Bash(git credential-manager:*)",
-      "Bash(pnpm run build)"
+      "Bash(pnpm run build)",
+      "WebSearch",
+      "Bash(git -C \"C:\\Users\\Dennis\\Desktop\\Projects\\md-system\" log --oneline -20)",
+      "Bash(git -C \"C:\\Users\\Dennis\\Desktop\\Projects\\md-system\" log -1 --format=\"%H %s %b\" 01c30a1)",
+      "mcp__supabase__list_tables",
+      "mcp__supabase__list_migrations",
+      "mcp__supabase__get_advisors",
+      "Bash(xargs:*)",
+      "Bash(grep:*)",
+      "Bash(pnpm type-check:*)",
+      "Bash(pnpm build:*)",
+      "WebFetch(domain:www.stpaulclark.com)",
+      "WebFetch(domain:stpaulclark.weebly.com)"
     ],
     "deny": [],
     "ask": []

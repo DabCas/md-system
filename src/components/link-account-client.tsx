@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import {
@@ -95,7 +96,7 @@ export function LinkAccountClient({ user, students }: LinkAccountClientProps) {
 
   const handleSubmit = async () => {
     if (!selectedStudent) {
-      alert('Please select your name')
+      toast.error('Please select your name')
       return
     }
 
@@ -112,12 +113,14 @@ export function LinkAccountClient({ user, students }: LinkAccountClientProps) {
         throw error
       }
 
+      toast.success('Account linked successfully!')
       // Redirect to student dashboard
       router.push('/dashboard/student')
       router.refresh()
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error linking account:', error)
-      alert(`Failed to link account: ${error?.message || 'Please try again.'}`)
+      const message = error instanceof Error ? error.message : 'Please try again.'
+      toast.error(`Failed to link account: ${message}`)
       setIsSubmitting(false)
     }
   }

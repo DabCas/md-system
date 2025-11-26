@@ -11,16 +11,17 @@ export async function GET(request: Request) {
     const { data: { user } } = await supabase.auth.exchangeCodeForSession(code)
 
     if (user) {
-      const userEmail = user.email
+      const userEmail = user.email?.toLowerCase()
 
       // Email domain whitelist - only allow @stpaulclark.com and test accounts
       if (userEmail) {
         const allowedTestEmails = [
+          'plukdennisalimpolos@gmail.com',
           'imdennisalimpolos@gmail.com',
           'mr.dennisalimpolos@gmail.com'
         ]
-        const isTestAccount = allowedTestEmails.includes(userEmail.toLowerCase())
-        const isStPaulDomain = userEmail.toLowerCase().endsWith('@stpaulclark.com')
+        const isTestAccount = allowedTestEmails.includes(userEmail)
+        const isStPaulDomain = userEmail.endsWith('@stpaulclark.com')
 
         if (!isTestAccount && !isStPaulDomain) {
           // Unauthorized domain - sign out and redirect to login with error
@@ -28,68 +29,35 @@ export async function GET(request: Request) {
           return NextResponse.redirect(`${origin}/login?error=unauthorized_domain`)
         }
 
-        // Auto-link account and set role in user_metadata
+        // Run all role checks in parallel for performance
+        const [adminResult, principalResult, teacherResult, studentResult] = await Promise.all([
+          supabase.from('admins').select('email').eq('email', userEmail).maybeSingle(),
+          supabase.from('principals').select('email').eq('email', userEmail).maybeSingle(),
+          supabase.from('teachers').select('email').eq('email', userEmail).maybeSingle(),
+          supabase.from('students').select('email').eq('email', userEmail).maybeSingle(),
+        ])
+
+        // Determine role by priority: admin → principal → teacher → student
         let userRole: string | null = null
-
-        // Check if user is a principal (highest priority)
-        const { data: principal } = await supabase
-          .from('principals')
-          .select('id, user_id')
-          .eq('email', userEmail)
-          .maybeSingle()
-
-        if (principal) {
+        if (adminResult.data) {
+          userRole = 'admin'
+        } else if (principalResult.data) {
           userRole = 'principal'
-          // Link principal account if not already linked
-          if (!principal.user_id) {
-            await supabase
-              .from('principals')
-              .update({ user_id: user.id })
-              .eq('id', principal.id)
-          }
-        } else {
-          // Check if user is a teacher
-          const { data: teacher } = await supabase
-            .from('teachers')
-            .select('id, user_id')
-            .eq('email', userEmail)
-            .maybeSingle()
-
-          if (teacher) {
-            userRole = 'teacher'
-            // Link teacher account if not already linked
-            if (!teacher.user_id) {
-              await supabase
-                .from('teachers')
-                .update({ user_id: user.id })
-                .eq('id', teacher.id)
-            }
-          } else {
-            // Check if user is a student
-            const { data: student } = await supabase
-              .from('students')
-              .select('id, user_id')
-              .eq('email', userEmail)
-              .maybeSingle()
-
-            if (student) {
-              userRole = 'student'
-              // Link student account if not already linked
-              if (!student.user_id) {
-                await supabase
-                  .from('students')
-                  .update({ user_id: user.id })
-                  .eq('id', student.id)
-              }
-            }
-          }
+        } else if (teacherResult.data) {
+          userRole = 'teacher'
+        } else if (studentResult.data) {
+          userRole = 'student'
         }
 
-        // Update user metadata with role (if found)
+        // If role found, set it in user metadata
         if (userRole) {
           await supabase.auth.updateUser({
             data: { role: userRole }
           })
+        } else {
+          // User not found in any table - block access
+          await supabase.auth.signOut()
+          return NextResponse.redirect(`${origin}/login?error=user_not_found`)
         }
       }
     }

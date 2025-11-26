@@ -61,25 +61,21 @@ export default async function StudentDashboardPage() {
     .eq('month', currentMonth)
     .single()
 
-  // Get current week's uniform passes (Monday to Sunday)
-  const now = new Date()
-  const startOfWeek = new Date(now)
-  const dayOfWeek = now.getDay()
-  const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek // Monday is 1, Sunday is 0
-  startOfWeek.setDate(now.getDate() + diff)
-  startOfWeek.setHours(0, 0, 0, 0)
-
-  const endOfWeek = new Date(startOfWeek)
-  endOfWeek.setDate(startOfWeek.getDate() + 6)
-  endOfWeek.setHours(23, 59, 59, 999)
-
-  const { data: uniformPasses } = await supabase
+  // Get current month's uniform passes
+  const { data: uniformPassesThisMonth } = await supabase
     .from('uniform_passes')
     .select('*')
     .eq('student_id', student.id)
-    .gte('earned_on', startOfWeek.toISOString())
-    .lte('earned_on', endOfWeek.toISOString())
-    .order('earned_on', { ascending: false })
+    .eq('month', currentMonth)
+    .order('created_at', { ascending: false })
+
+  // Get all uniform passes (for history)
+  const { data: allUniformPasses } = await supabase
+    .from('uniform_passes')
+    .select('*')
+    .eq('student_id', student.id)
+    .order('created_at', { ascending: false })
+    .limit(20)
 
   // Get all records with teacher info
   const { data: recordsRaw } = await supabase
@@ -100,10 +96,33 @@ export default async function StudentDashboardPage() {
     .limit(100)
 
   // Transform records to match expected type
-  const records = recordsRaw?.map((record: any) => ({
+  interface RecordWithTeachers {
+    id: string
+    type: 'merit' | 'demerit'
+    reason: string
+    quantity: number
+    created_at: string
+    teachers: { name: string } | { name: string }[]
+  }
+
+  const records = recordsRaw?.map((record: RecordWithTeachers) => ({
     ...record,
     teachers: Array.isArray(record.teachers) ? record.teachers[0] : record.teachers
   }))
+
+  // Calculate progress to next uniform pass
+  const nextPassAt = (Math.floor(meritsTotal / 5) + 1) * 5
+  const progressToNextPass = meritsTotal % 5
+
+  // Check for pending detentions
+  const { data: pendingDetention } = await supabase
+    .from('detentions')
+    .select('id, demerits_count, month, status')
+    .eq('student_id', student.id)
+    .eq('status', 'pending')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
 
   return (
     <StudentDashboardClient
@@ -112,8 +131,12 @@ export default async function StudentDashboardPage() {
       meritsTotal={meritsTotal}
       demeritsTotal={demeritsTotal}
       raffleEntries={raffleEntry?.total_entries || 0}
-      uniformPasses={uniformPasses?.length || 0}
+      uniformPassesThisMonth={uniformPassesThisMonth?.length || 0}
+      uniformPassHistory={allUniformPasses || []}
+      nextPassAt={nextPassAt}
+      progressToNextPass={progressToNextPass}
       records={records || []}
+      pendingDetention={pendingDetention}
     />
   )
 }

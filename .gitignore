@@ -1,4 +1,21 @@
-.env
-nul
+# Dependencies
 node_modules/
+
+# Next.js
 .next/
+out/
+
+# Build
+tsconfig.tsbuildinfo
+
+# Environment
+.env
+.env.local
+
+# OS
+nul
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
