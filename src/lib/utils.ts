@@ -41,3 +41,33 @@ export function getSchoolWeekEnd(date: Date): Date {
   end.setHours(23, 59, 59, 999)
   return end
 }
+
+/**
+ * Get the first Friday of the given month (school month reset date)
+ * School months reset on the first Friday, not the 1st
+ * @param date - Any date in the month
+ * @returns Date object set to the first Friday of that month at 00:00:00
+ */
+export function getSchoolMonthStart(date: Date): Date {
+  const d = new Date(date)
+  d.setDate(1) // Go to 1st of the month
+  d.setHours(0, 0, 0, 0)
+
+  // Find the first Friday (day 5)
+  const day = d.getDay()
+  // Days to add to reach Friday: (5 - day + 7) % 7
+  // If day is 0 (Sun), add 5; if day is 5 (Fri), add 0; if day is 6 (Sat), add 6
+  const daysToAdd = (5 - day + 7) % 7
+  d.setDate(d.getDate() + daysToAdd)
+
+  return d
+}
+
+/**
+ * Get the school month start as ISO string for database queries
+ * @param date - Any date in the month
+ * @returns ISO string of the first Friday of that month
+ */
+export function getSchoolMonthStartISO(date: Date): string {
+  return getSchoolMonthStart(date).toISOString()
+}

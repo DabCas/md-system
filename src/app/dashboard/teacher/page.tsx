@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { TeacherDashboardClient } from '@/components/teacher-dashboard-client'
-import { getSchoolWeekStart } from '@/lib/utils'
+import { getSchoolWeekStart, getSchoolMonthStartISO } from '@/lib/utils'
 
 export default async function TeacherDashboardPage() {
   const supabase = await createClient()
@@ -150,10 +150,8 @@ export default async function TeacherDashboardPage() {
     remainingQuota = quotaLimit - meritsIssued
   }
 
-  // Get current month's records with student info
-  const startOfMonth = new Date()
-  startOfMonth.setDate(1)
-  startOfMonth.setHours(0, 0, 0, 0)
+  // Get current school month's records (resets on first Friday of month)
+  const schoolMonthStart = getSchoolMonthStartISO(new Date())
 
   let monthRecordsQuery = supabase
     .from('records')
@@ -171,7 +169,7 @@ export default async function TeacherDashboardPage() {
         grade
       )
     `)
-    .gte('created_at', startOfMonth.toISOString())
+    .gte('created_at', schoolMonthStart)
     .eq('is_deleted', false)
     .order('created_at', { ascending: false })
     .limit(50)
